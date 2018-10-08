@@ -10,6 +10,10 @@ from os import path
 import re
 import urllib.parse as urlparse
 import urllib.request as request
+from datetime import datetime
+import piexif
+from io import BytesIO
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expect
@@ -107,6 +111,20 @@ def extract_asset_ids(drv):
     elements = drv.find_elements(By.XPATH, '//a[contains(@href, "?fbid=")]')
     return filtered_unique(map(extract_id_param, elements))
 
+def extract_timestamp(drv):
+    """
+    Get image timestamp from element
+    """
+    timestamp_xpath = '//div[@data-testid="story-subtitle"]//abbr'
+    abbr = drv.find_element(By.XPATH, timestamp_xpath)
+    """
+    try:
+        abbr = drv.find_element(By.XPATH, timestamp_xpath)
+    except NoSuchElementException:
+        return None
+    """
+    return int(abbr.get_attribute('data-utime'))
+
 def extract_image_url(drv):
     """
     Get image URL from element
@@ -117,12 +135,27 @@ def extract_image_url(drv):
         return None
     return img.get_attribute('src')
 
-def download_image(url, out_dir, filename):
+def download_image(url, out_dir, filename, timestamp):
     """
     Save image to disk
     """
+    response = request.urlopen(url)
+    img = Image.open(BytesIO(response.read()))
+    datetime_format = '%Y-%m-%d %H:%M:%S'
+
+    date_time_original = datetime.utcfromtimestamp(timestamp).strftime(datetime_format)
+    exif_dict = {
+        '0th': {
+            piexif.ImageIFD.DateTime: date_time_original
+        },
+        'Exif': {
+            piexif.ExifIFD.DateTimeOriginal: date_time_original
+        }
+    }
+    exif_bytes = piexif.dump(exif_dict)
     filepath = path.join(out_dir, filename)
-    request.urlretrieve(url, filepath)
+    img.save(filepath, 'jpeg', exif=exif_bytes)
+
 
 def print_progress(complete, total):
     """
@@ -139,23 +172,26 @@ except (KeyboardInterrupt, TimeoutException):
 
 try:
     print('Please login to Facebook. Your credentials are not logged.')
-    WebDriverWait(driver, 180).until_not(expect.title_contains('Log In'))
+    WebDriverWait(driver, 360).until_not(expect.title_contains('log in'))
 except (KeyboardInterrupt, TimeoutException):
-    teardown(driver, 'Please log into Facebook within three minutes.')
+    teardown(driver, 'Please log into Facebook within six minutes.')
 
 try:
     driver.get('https://www.facebook.com/search/{}/photos-of/intersect'.format(fb_id))
 
     print('Loading all tagged photos. This can take some time.')
     scroll_to_end(driver)
-
+    print('Extracting asset IDs')
     asset_ids = extract_asset_ids(driver)
     print('Found {} unique photos.'.format(len(asset_ids)))
 
     for index, asset_id in enumerate(asset_ids):
+        # extract timestamp
+        driver.get('https://www.facebook.com/photo.php?fbid={}'.format(asset_id))
+        image_timestamp = extract_timestamp(driver)
         driver.get('https://m.facebook.com/photo/view_full_size/?fbid={}'.format(asset_id))
         image_url = extract_image_url(driver)
-        download_image(image_url, output_dir, 'fb_{}.jpg'.format(index))
+        download_image(image_url, output_dir, 'fb_{}.jpg'.format(index), image_timestamp)
         print_progress(index+1, len(asset_ids))
     print()
 except (KeyboardInterrupt, TimeoutException):
