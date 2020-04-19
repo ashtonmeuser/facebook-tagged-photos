@@ -19,20 +19,22 @@ from selenium.webdriver.common.by import By
 
 # Please add chromedriver to path
 
-# Removing facebook ID
+# removing fb id (again)
 
-#try:
-#    fb_id = sys.argv[1]
-#    if re.match(r'^\d+$', fb_id) is None:
-#        raise ValueError
-#except (IndexError, ValueError):
-#    print('Please supply a numeric Facebook ID as the first argument.')
-#    print('Find your ID here: https://findmyfbid.in.')
-#    print('Please note: Facebook is constanly evading ID finding tools.')
-#    sys.exit(1)
+"""
+try:
+    fb_id = sys.argv[1]
+    if re.match(r'^\d+$', fb_id) is None:
+        raise ValueError
+except (IndexError, ValueError):
+    print('Please supply a numeric Facebook ID as the first argument.')
+    print('Find your ID here: https://findmyfbid.in.')
+    print('Please note: Facebook is constanly evading ID finding tools.')
+    sys.exit(1)
+"""
 
 try:
-    output_dir = sys.argv[2]
+    output_dir = path.dirname(path.realpath(__file__)) # changed to the folder where is located the file
     if not path.isdir(output_dir):
         raise ValueError
     output_dir = path.abspath(output_dir)
@@ -93,6 +95,7 @@ def scroll_to_end(drv):
             return False
         return True
 
+
     WebDriverWait(drv, 3600, poll_frequency=0.25).until(scrolled_to_bottom)
 
 def extract_asset_ids(drv):
@@ -145,10 +148,11 @@ except (KeyboardInterrupt, TimeoutException):
 
 
 try:
-    driver.get('https://www.facebook.com/search/{}/photos-of/intersect'.format(fb_id))
+    # Not necessary
+    # driver.get('https://www.facebook.com/search/{}/photos-of/intersect'.format(fb_id))
 
     print('Loading all tagged photos. This can take some time.')
-    scroll_to_end(driver)
+    #scroll_to_end(driver) removed
 
     asset_ids = extract_asset_ids(driver)
     print('Found {} unique photos.'.format(len(asset_ids)))
