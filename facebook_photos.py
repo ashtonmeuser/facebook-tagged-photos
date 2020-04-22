@@ -1,12 +1,12 @@
-#!/usr/bin/env python3
 
 """
 Download tagged photos from Facebook
 700213996
 """
 
-import sys
+import sys, os
 from os import path
+import time #
 import re
 import urllib.parse as urlparse
 import urllib.request as request
@@ -15,6 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as expect
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.common.by import By
+
+# Please add chromedriver to path
 
 try:
     fb_id = sys.argv[1]
@@ -27,10 +29,10 @@ except (IndexError, ValueError):
     sys.exit(1)
 
 try:
-    output_dir = sys.argv[2]
-    if not path.isdir(output_dir):
-        raise ValueError
-    output_dir = path.abspath(output_dir)
+    output_dir = 'photos/'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    #output_dir = path.abspath(output_dir)
     print('Image files will be saved in \'{}\'.'.format(output_dir))
 except IndexError:
     output_dir = path.dirname(path.realpath(__file__))
@@ -41,27 +43,27 @@ except ValueError:
     sys.exit(1)
 
 def filtered_unique(array):
-    """
-    Removes duplicates and None from list
-    """
+    #
+    #Removes duplicates and None from list
+    #
     return list(set([x for x in array]))
 
 def create_driver():
-    """
-    Creates Chrome driver
-    Disables notifications
-    """
+    #
+    #Creates Chrome driver
+    #Disables notifications
+    #
     options = webdriver.ChromeOptions()
     prefs = {'profile.default_content_setting_values.notifications': 2}
     options.add_experimental_option('prefs', prefs)
-    drv = webdriver.Chrome('/usr/local/bin/chromedriver', chrome_options=options)
+    drv = webdriver.Chrome('/chromedriver/chromedriver.exe', chrome_options=options)
     drv.implicitly_wait(10)
     return drv
 
 def teardown(drv, message):
-    """
-    Print exit message, close driver
-    """
+    #
+    #Print exit message, close driver
+    #
     print(message)
     input('Press Enter to close browser window.')
     try:
@@ -71,14 +73,14 @@ def teardown(drv, message):
     sys.exit()
 
 def scroll_to_end(drv):
-    """
-    Scrolls to the bottom of the page, triggering more images to load
-    Waits until end of results is reached
-    """
+    #
+    #Scrolls to the bottom of the page, triggering more images to load
+    #Waits until end of results is reached
+    #
     def scrolled_to_bottom(drv):
-        """
-        Scroll to the bottom and check for the end or results flag
-        """
+        #
+        #Scroll to the bottom and check for the end or results flag
+        #
         try:
             drv.implicitly_wait(0)
             drv.find_element(By.XPATH, '//div[text() = "End of Results"]')
@@ -91,13 +93,13 @@ def scroll_to_end(drv):
     WebDriverWait(drv, 3600, poll_frequency=0.25).until(scrolled_to_bottom)
 
 def extract_asset_ids(drv):
-    """
-    Finds all asset ids within links
-    """
+    #
+    #Finds all asset ids within links
+    #
     def extract_id_param(anchor):
-        """
-        Extract Facebook asset ID from anchor element
-        """
+        #
+        #Extract Facebook asset ID from anchor element
+        #
         parsed = urlparse.urlparse(anchor.get_attribute('href'))
         try:
             return urlparse.parse_qs(parsed.query)['fbid'][0]
@@ -108,9 +110,9 @@ def extract_asset_ids(drv):
     return filtered_unique(map(extract_id_param, elements))
 
 def extract_image_url(drv):
-    """
-    Get image URL from element
-    """
+    #
+    # Get image URL from element
+    #
     try:
         img = drv.find_element(By.XPATH, '//img')
     except NoSuchElementException:
@@ -118,36 +120,36 @@ def extract_image_url(drv):
     return img.get_attribute('src')
 
 def download_image(url, out_dir, filename):
-    """
-    Save image to disk
-    """
+    #
+    #Save image to disk
+    #
     filepath = path.join(out_dir, filename)
     request.urlretrieve(url, filepath)
 
 def print_progress(complete, total):
-    """
-    Print progress to same line
-    """
+    #
+    #Print progress to same line
+    #
     padded = str(complete).zfill(len(str(total)))
     print('\r{}/{} ({:.1f}%)'.format(padded, total, 100*complete/total), end='')
 
 try:
     driver = create_driver()
     driver.get('https://facebook.com')
+    print('Please, log in')
+    input('Press enter to continue')
 except (KeyboardInterrupt, TimeoutException):
     teardown(driver, 'Quitting before user logged into Facebook.')
 
-try:
-    print('Please login to Facebook. Your credentials are not logged.')
-    WebDriverWait(driver, 180).until_not(expect.title_contains('Log In'))
-except (KeyboardInterrupt, TimeoutException):
-    teardown(driver, 'Please log into Facebook within three minutes.')
+
 
 try:
-    driver.get('https://www.facebook.com/search/{}/photos-of/intersect'.format(fb_id))
+    # no, it is not
+    # driver.get('https://www.facebook.com/search/{}/photos-of/intersect'.format(fb_id))
 
-    print('Loading all tagged photos. This can take some time.')
-    scroll_to_end(driver)
+    print('Please go to your tagged photos page and scroll down until the end')
+    #scroll_to_end(driver) removed fow now
+    input('Press enter to continue')
 
     asset_ids = extract_asset_ids(driver)
     print('Found {} unique photos.'.format(len(asset_ids)))
