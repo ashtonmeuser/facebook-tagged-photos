@@ -5,7 +5,7 @@ Download tagged photos from Facebook
 700213996
 """
 
-import sys
+import sys, os
 from os import path
 import time #
 import re
@@ -19,9 +19,6 @@ from selenium.webdriver.common.by import By
 
 # Please add chromedriver to path
 
-# removing fb id (again)
-
-"""
 try:
     fb_id = sys.argv[1]
     if re.match(r'^\d+$', fb_id) is None:
@@ -31,7 +28,6 @@ except (IndexError, ValueError):
     print('Find your ID here: https://findmyfbid.in.')
     print('Please note: Facebook is constanly evading ID finding tools.')
     sys.exit(1)
-"""
 
 try:
     output_dir = path.dirname(path.realpath(__file__)) # changed to the folder where is located the file
@@ -95,7 +91,6 @@ def scroll_to_end(drv):
             return False
         return True
 
-
     WebDriverWait(drv, 3600, poll_frequency=0.25).until(scrolled_to_bottom)
 
 def extract_asset_ids(drv):
@@ -142,17 +137,20 @@ def print_progress(complete, total):
 try:
     driver = create_driver()
     driver.get('https://facebook.com')
+    print('Please, log in')
+    input('Press enter to continue')
 except (KeyboardInterrupt, TimeoutException):
     teardown(driver, 'Quitting before user logged into Facebook.')
 
 
 
 try:
-    # Not necessary
+    # no, it is not
     # driver.get('https://www.facebook.com/search/{}/photos-of/intersect'.format(fb_id))
 
-    print('Loading all tagged photos. This can take some time.')
-    #scroll_to_end(driver) removed
+    print('Please go to your tagged photos page and scroll down until the end')
+    #scroll_to_end(driver) removed fow now
+    input('Press enter to continue')
 
     asset_ids = extract_asset_ids(driver)
     print('Found {} unique photos.'.format(len(asset_ids)))
@@ -167,3 +165,7 @@ except (KeyboardInterrupt, TimeoutException):
     teardown(driver, 'Quitting due to keyboard interrupt or timeout.')
 
 teardown(driver, 'Done!')
+
+# TODO
+#login, then hit enter
+# scroll down, then hit enter
