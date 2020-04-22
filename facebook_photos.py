@@ -30,10 +30,10 @@ except (IndexError, ValueError):
     sys.exit(1)
 
 try:
-    output_dir = path.dirname(path.realpath(__file__)) # changed to the folder where is located the file
-    if not path.isdir(output_dir):
-        raise ValueError
-    output_dir = path.abspath(output_dir)
+    output_dir = 'photos/'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    #output_dir = path.abspath(output_dir)
     print('Image files will be saved in \'{}\'.'.format(output_dir))
 except IndexError:
     output_dir = path.dirname(path.realpath(__file__))
@@ -165,7 +165,3 @@ except (KeyboardInterrupt, TimeoutException):
     teardown(driver, 'Quitting due to keyboard interrupt or timeout.')
 
 teardown(driver, 'Done!')
-
-# TODO
-#login, then hit enter
-# scroll down, then hit enter
