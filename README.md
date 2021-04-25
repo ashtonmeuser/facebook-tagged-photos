@@ -18,7 +18,16 @@ If you have several versions of pip installed, you may need to run the follwing.
 pip3 install selenium
 ```
 
+Install other dependencies:
+
+```
+pip install -r requirements.txt
+```
+
 Chrome is used to interact with Facebook via Selenium. As such, you will need to install a driver for Chrome. The driver can be found [here](https://sites.google.com/a/chromium.org/chromedriver/downloads). If using a Unix system, add the driver to `/usr/local/bin`.
+
+Make sure you are using chromedriver >= 2.42 (`chromedriver
+--version`).
 
 Clone this repo and you're good to go!
 
